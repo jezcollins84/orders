@@ -39,9 +39,16 @@
         window.__initial_auth_token = null; // Or a custom token if you implement one
     </script>
 
-    <!-- Your App.js file, now transpiled by Babel, will handle its own rendering -->
+    <!-- Your App.js file, now transpiled by Babel -->
     <script type="text/babel" src="./App.js"></script>
 
-    <!-- Removed the final rendering script block from here -->
+    <script>
+        // This script will run AFTER App.js has been loaded and transpiled by Babel,
+        // ensuring that the global 'App' component is defined before it's used.
+        // ReactDOM and React are also globally available from their CDN loads.
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
 </body>
 </html>
+
