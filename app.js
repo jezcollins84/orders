@@ -1,8 +1,8 @@
-// Remove all import statements for React and Firebase as they are now loaded globally in index.html
-// import React, { useState, useEffect, useRef } from 'react';
-// import { initializeApp } from 'firebase/app';
-// import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-// import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+// App.js - This will be compiled by esbuild
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 // Ensure these global variables are available from index.html
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -10,36 +10,33 @@ const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__f
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
 // Initialize Firebase outside the component to avoid re-initialization
-// These will be accessed globally from the Firebase compat SDKs loaded in index.html
 let app, db, auth;
 
 function App() {
-  // Use React.useState, React.useEffect, React.useRef since React is global
-  const [activeSection, setActiveSection] = React.useState('newOrder'); // 'newOrder', 'activeOrders', 'completedOrders', 'setup'
-  const [menuItems, setMenuItems] = React.useState([]);
-  const [currentOrder, setCurrentOrder] = React.useState([]);
-  const [orders, setOrders] = React.useState([]); // All orders from Firestore
-  const [orderCounter, setOrderCounter] = React.useState(1);
-  const [newMenuItemName, setNewMenuItemName] = React.useState('');
-  const [newMenuItemPrice, setNewMenuItemPrice] = React.useState('');
-  const [isAuthReady, setIsAuthReady] = React.useState(false);
-  const [userId, setUserId] = React.useState(null);
-  const [showModal, setShowModal] = React.useState(false);
-  const [modalContent, setModalContent] = React.useState({ title: '', message: '', onConfirm: null, showConfirm: false });
+  const [activeSection, setActiveSection] = useState('newOrder'); // 'newOrder', 'activeOrders', 'completedOrders', 'setup'
+  const [menuItems, setMenuItems] = useState([]);
+  const [currentOrder, setCurrentOrder] = useState([]);
+  const [orders, setOrders] = useState([]); // All orders from Firestore
+  const [orderCounter, setOrderCounter] = useState(1);
+  const [newMenuItemName, setNewMenuItemName] = useState('');
+  const [newMenuItemPrice, setNewMenuItemPrice] = useState('');
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalContent, setModalContent] = useState({ title: '', message: '', onConfirm: null, showConfirm: false });
 
   // Refs for audio and notification
-  const audioRef = React.useRef(null);
-  const notificationRef = React.useRef(null);
+  const audioRef = useRef(null);
+  const notificationRef = useRef(null);
 
   // Initialize Firebase and Auth
-  React.useEffect(() => {
+  useEffect(() => {
     try {
-      // Use global firebase functions
-      app = firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore().getFirestore(app);
-      auth = firebase.auth().getAuth(app);
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      auth = getAuth(app);
 
-      const unsubscribe = firebase.auth().onAuthStateChanged(auth, async (user) => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
           setUserId(user.uid);
           setIsAuthReady(true);
@@ -47,10 +44,10 @@ function App() {
         } else {
           try {
             if (initialAuthToken) {
-              await firebase.auth().signInWithCustomToken(auth, initialAuthToken);
+              await signInWithCustomToken(auth, initialAuthToken);
               console.log('Signed in with custom token.');
             } else {
-              await firebase.auth().signInAnonymously(auth);
+              await signInAnonymously(auth);
               console.log('Signed in anonymously.');
             }
           } catch (error) {
@@ -72,12 +69,12 @@ function App() {
   }, []);
 
   // Fetch Menu Items and Order Counter
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isAuthReady || !db) return;
 
-    // Use global firestore functions
-    const menuItemsCollectionRef = firebase.firestore().collection(db, `artifacts/${appId}/public/data/menuItems`);
-    const unsubscribeMenuItems = firebase.firestore().onSnapshot(menuItemsCollectionRef, (snapshot) => {
+    // Fetch Menu Items
+    const menuItemsCollectionRef = collection(db, `artifacts/${appId}/public/data/menuItems`);
+    const unsubscribeMenuItems = onSnapshot(menuItemsCollectionRef, (snapshot) => {
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setMenuItems(items.sort((a, b) => a.name.localeCompare(b.name))); // Sort alphabetically
     }, (error) => {
@@ -85,13 +82,13 @@ function App() {
     });
 
     // Fetch Order Counter
-    const appSettingsDocRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
-    const unsubscribeOrderCounter = firebase.firestore().onSnapshot(appSettingsDocRef, (docSnap) => {
+    const appSettingsDocRef = doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
+    const unsubscribeOrderCounter = onSnapshot(appSettingsDocRef, (docSnap) => {
       if (docSnap.exists()) {
         setOrderCounter(docSnap.data().count || 1);
       } else {
         // Initialize if not exists
-        firebase.firestore().setDoc(appSettingsDocRef, { count: 1 }, { merge: true });
+        setDoc(appSettingsDocRef, { count: 1 }, { merge: true });
       }
     }, (error) => {
       console.error("Error fetching order counter:", error);
@@ -104,14 +101,14 @@ function App() {
   }, [isAuthReady, db]);
 
   // Fetch Orders
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isAuthReady || !db) return;
 
-    const ordersCollectionRef = firebase.firestore().collection(db, `artifacts/${appId}/public/data/orders`);
+    const ordersCollectionRef = collection(db, `artifacts/${appId}/public/data/orders`);
     // Order by timestamp to get the latest orders first in active/completed sections
-    const q = firebase.firestore().query(ordersCollectionRef, firebase.firestore().orderBy('timestamp', 'desc'));
+    const q = query(ordersCollectionRef, orderBy('timestamp', 'desc'));
 
-    const unsubscribeOrders = firebase.firestore().onSnapshot(q, (snapshot) => {
+    const unsubscribeOrders = onSnapshot(q, (snapshot) => {
       const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setOrders(fetchedOrders);
     }, (error) => {
@@ -149,7 +146,7 @@ function App() {
 
     try {
       const price = parseFloat(newMenuItemPrice);
-      await firebase.firestore().addDoc(firebase.firestore().collection(db, `artifacts/${appId}/public/data/menuItems`), {
+      await addDoc(collection(db, `artifacts/${appId}/public/data/menuItems`), {
         name: newMenuItemName,
         price: price,
       });
@@ -169,7 +166,7 @@ function App() {
     }
     showConfirmationModal('Confirm Delete', `Are you sure you want to delete "${name}" from the menu?`, async () => {
       try {
-        await firebase.firestore().deleteDoc(firebase.firestore().doc(db, `artifacts/${appId}/public/data/menuItems`, id));
+        await deleteDoc(doc(db, `artifacts/${appId}/public/data/menuItems`, id));
         showInfoModal('Success', `${name} deleted from menu.`);
         closeModal();
       } catch (e) {
@@ -239,11 +236,11 @@ function App() {
         userId: userId, // Store the user who created the order
       };
 
-      await firebase.firestore().addDoc(firebase.firestore().collection(db, `artifacts/${appId}/public/data/orders`), newOrderDoc);
+      await addDoc(collection(db, `artifacts/${appId}/public/data/orders`), newOrderDoc);
 
       // Increment order counter in Firestore
-      const appSettingsDocRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
-      await firebase.firestore().updateDoc(appSettingsDocRef, { count: orderCounter + 1 });
+      const appSettingsDocRef = doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
+      await updateDoc(appSettingsDocRef, { count: orderCounter + 1 });
 
       setCurrentOrder([]); // Clear current order
       setActiveSection('activeOrders'); // Navigate to active orders
@@ -273,8 +270,8 @@ function App() {
     }
     showConfirmationModal('Confirm Reset', 'Are you sure you want to reset the order count to 1? This cannot be undone.', async () => {
       try {
-        const appSettingsDocRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
-        await firebase.firestore().setDoc(appSettingsDocRef, { count: 1 });
+        const appSettingsDocRef = doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
+        await setDoc(appSettingsDocRef, { count: 1 });
         showInfoModal('Success', 'Order count has been reset to 1.');
         closeModal();
       } catch (e) {
@@ -291,8 +288,8 @@ function App() {
       return;
     }
     try {
-      const orderRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId);
-      const orderSnap = await firebase.firestore().getDoc(orderRef);
+      const orderRef = doc(db, `artifacts/${appId}/public/data/orders`, orderId);
+      const orderSnap = await getDoc(orderRef);
 
       if (orderSnap.exists()) {
         const orderData = orderSnap.data();
@@ -308,12 +305,12 @@ function App() {
           updatedItems[itemIndex]['isServed'] = false;
         }
 
-        await firebase.firestore().updateDoc(orderRef, { items: updatedItems });
+        await updateDoc(orderRef, { items: updatedItems });
 
         // Check if all items are served in this order
         const allServed = updatedItems.every(item => item.isServed);
         if (allServed) {
-          await firebase.firestore().updateDoc(orderRef, { status: 'completed' });
+          await updateDoc(orderRef, { status: 'completed' });
           showInfoModal('Order Completed!', `Order #${orderData.orderNumber} has been moved to completed orders.`);
         }
       }
@@ -329,8 +326,8 @@ function App() {
       return;
     }
     try {
-      const orderRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId);
-      const orderSnap = await firebase.firestore().getDoc(orderRef);
+      const orderRef = doc(db, `artifacts/${appId}/public/data/orders`, orderId);
+      const orderSnap = await getDoc(orderRef);
 
       if (orderSnap.exists()) {
         const orderData = orderSnap.data();
@@ -340,11 +337,11 @@ function App() {
           // If marking all served, also mark all ready
           ...(statusType === 'isServed' && { isReady: true })
         }));
-        await firebase.firestore().updateDoc(orderRef, { items: updatedItems });
+        await updateDoc(orderRef, { items: updatedItems });
 
         // If all items are served, mark order as completed
         if (statusType === 'isServed') {
-          await firebase.firestore().updateDoc(orderRef, { status: 'completed' });
+          await updateDoc(orderRef, { status: 'completed' });
           showInfoModal('Order Completed!', `Order #${orderData.orderNumber} has been moved to completed orders.`);
         }
       }
@@ -375,8 +372,8 @@ function App() {
     }
     showConfirmationModal('Confirm Reopen', `Are you sure you want to reopen Order #${orderNumber}? It will move back to active orders.`, async () => {
       try {
-        const orderRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId);
-        await firebase.firestore().updateDoc(orderRef, { status: 'active' });
+        const orderRef = doc(db, `artifacts/${appId}/public/data/orders`, orderId);
+        await updateDoc(orderRef, { status: 'active' });
         showInfoModal('Success', `Order #${orderNumber} reopened.`);
         closeModal();
       } catch (e) {
@@ -404,12 +401,12 @@ function App() {
     }
     showConfirmationModal('Confirm Delete', `Are you sure you want to permanently delete Order #${orderNumber}? This cannot be undone.`, async () => {
       try {
-        await firebase.firestore().deleteDoc(firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId));
+        await deleteDoc(doc(db, `artifacts/${appId}/public/data/orders`, orderId));
         showInfoModal('Success', `Order #${orderNumber} deleted.`);
         closeModal();
       } catch (e) {
         console.error("Error deleting order: ", e);
-        showInfoModal('Error', 'Failed to delete order. Please try again.');
+        showInfoModal('Error', 'Failed to delete menu item. Please try again.');
       }
     });
   };
@@ -614,226 +611,220 @@ function App() {
                     <p className="text-sm text-red-600 mb-4">Paid at: {order.displayTime}</p>
                     <ul className="mb-4 space-y-2">
                       {order.items.map((item, index) => (
-                        <li key={index} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
-                          <span className="text-gray-800 font-medium">{item.name} x {item.quantity}</span>
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => toggleItemStatus(order.id, index, 'isReady')}
-                              className={`px-3 py-1 rounded-full text-sm font-semibold transition duration-200 active:scale-95 transform
-                                ${item.isReady ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                            >
-                              {item.isReady ? 'Ready!' : 'Ready?'}
-                            </button>
-                            <button
-                              onClick={() => toggleItemStatus(order.id, index, 'isServed')}
-                              className={`px-3 py-1 rounded-full text-sm font-semibold transition duration-200 active:scale-95 transform
-                                ${item.isServed ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                            >
-                              {item.isServed ? 'Served!' : 'Served?'}
-                            </button>
+                                <li key={index} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                                  <span className="text-gray-800 font-medium">{item.name} x {item.quantity}</span>
+                                  <div className="flex space-x-2">
+                                    <button
+                                      onClick={() => toggleItemStatus(order.id, index, 'isReady')}
+                                      className={`px-3 py-1 rounded-full text-sm font-semibold transition duration-200 active:scale-95 transform
+                                        ${item.isReady ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                    >
+                                      {item.isReady ? 'Ready!' : 'Ready?'}
+                                    </button>
+                                    <button
+                                      onClick={() => toggleItemStatus(order.id, index, 'isServed')}
+                                      className={`px-3 py-1 rounded-full text-sm font-semibold transition duration-200 active:scale-95 transform
+                                        ${item.isServed ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                    >
+                                      {item.isServed ? 'Served!' : 'Served?'}
+                                    </button>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                            <div className="flex justify-end space-x-2 mt-4">
+                              <button
+                                onClick={() => toggleAllItemsStatus(order.id, 'isReady')}
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200 shadow-md active:scale-98 transform"
+                              >
+                                All Ready
+                              </button>
+                              <button
+                                onClick={() => toggleAllItemsStatus(order.id, 'isServed')}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200 shadow-md active:scale-98 transform"
+                              >
+                                Serve All
+                              </button>
+                            </div>
                           </div>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="flex justify-end space-x-2 mt-4">
-                      <button
-                        onClick={() => toggleAllItemsStatus(order.id, 'isReady')}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200 shadow-md active:scale-98 transform"
-                      >
-                        All Ready
-                      </button>
-                      <button
-                        onClick={() => toggleAllItemsStatus(order.id, 'isServed')}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200 shadow-md active:scale-98 transform"
-                      >
-                        Serve All
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Completed Orders Section */}
-        {activeSection === 'completedOrders' && (
-          <section className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-red-500">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">Completed Orders</h2>
-            {completedOrders.length === 0 ? (
-              <p className="text-gray-500 text-center">No completed orders yet.</p>
-            ) : (
-              <div className="space-y-6">
-                {completedOrders.map(order => (
-                  <div key={order.id} className="bg-gray-100 p-5 rounded-xl shadow-md border border-gray-200">
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="text-xl font-bold text-gray-800">Order #{order.orderNumber}</h3>
-                      <span className="text-lg font-semibold text-gray-700">£{order.total.toFixed(2)}</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-4">Paid at: {order.displayTime}</p>
-                    <ul className="mb-4 space-y-2">
-                      {order.items.map((item, index) => (
-                        <li key={index} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm text-gray-700">
-                          <span>{item.name} x {item.quantity}</span>
-                          <div className="flex space-x-2 text-sm">
-                            <span className={item.isReady ? 'text-green-600 font-semibold' : 'text-gray-500'}>
-                              {item.isReady ? 'Ready' : 'Not Ready'}
-                            </span>
-                            <span className={item.isServed ? 'text-red-600 font-semibold' : 'text-gray-500'}>
-                              {item.isServed ? 'Served' : 'Not Served'}
-                            </span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="flex flex-wrap justify-end gap-2 mt-4">
-                      <button
-                        onClick={() => handleReopenOrder(order.id, order.orderNumber)}
-                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200 shadow-md text-sm active:scale-98 transform"
-                      >
-                        Reopen
-                      </button>
-                      <button
-                        onClick={() => handleEditOrder(order)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-200 shadow-md text-sm active:scale-98 transform"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteOrder(order.id, order.orderNumber)}
-                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-200 shadow-md text-sm active:scale-98 transform"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Setup Section */}
-        {activeSection === 'setup' && (
-          <section className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-red-500">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">App Setup</h2>
-
-            {/* Add/Remove Menu Items */}
-            <div className="mb-8 p-4 bg-red-50 rounded-lg shadow-sm">
-              <h3 className="text-xl font-bold text-gray-800 mb-3">Manage Menu Items</h3>
-              <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                <input
-                  type="text"
-                  placeholder="Item Name"
-                  value={newMenuItemName}
-                  onChange={(e) => setNewMenuItemName(e.target.value)}
-                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                />
-                <input
-                  type="number"
-                  placeholder="Price"
-                  value={newMenuItemPrice}
-                  onChange={(e) => setNewMenuItemPrice(e.target.value)}
-                  className="w-full sm:w-auto p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                />
-                <button
-                  onClick={handleAddMenuItem}
-                  className="w-full sm:w-auto px-4 py-3 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition duration-200 active:scale-98 transform"
-                >
-                  Add Item
-                </button>
-              </div>
-              <ul className="space-y-2">
-                {menuItems.length === 0 ? (
-                  <p className="text-gray-500 text-center">No menu items defined.</p>
-                ) : (
-                  menuItems.map(item => (
-                    <li key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
-                      <span className="font-medium">{item.name} - £{item.price.toFixed(2)}</span>
-                      <button
-                        onClick={() => handleDeleteMenuItem(item.id, item.name)}
-                        className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm hover:bg-red-200 transition duration-200 active:scale-95 transform"
-                      >
-                        Delete
-                      </button>
-                    </li>
-                  ))
+                        ))}
+                      </div>
+                    )}
+                  </section>
                 )}
-              </ul>
+
+                {/* Completed Orders Section */}
+                {activeSection === 'completedOrders' && (
+                  <section className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-red-500">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">Completed Orders</h2>
+                    {completedOrders.length === 0 ? (
+                      <p className="text-gray-500 text-center">No completed orders yet.</p>
+                    ) : (
+                      <div className="space-y-6">
+                        {completedOrders.map(order => (
+                          <div key={order.id} className="bg-gray-100 p-5 rounded-xl shadow-md border border-gray-200">
+                            <div className="flex justify-between items-center mb-3">
+                              <h3 className="text-xl font-bold text-gray-800">Order #{order.orderNumber}</h3>
+                              <span className="text-lg font-semibold text-gray-700">£{order.total.toFixed(2)}</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-4">Paid at: {order.displayTime}</p>
+                            <ul className="mb-4 space-y-2">
+                              {order.items.map((item, index) => (
+                                <li key={index} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm text-gray-700">
+                                  <span>{item.name} x {item.quantity}</span>
+                                  <div className="flex space-x-2 text-sm">
+                                    <span className={item.isReady ? 'text-green-600 font-semibold' : 'text-gray-500'}>
+                                      {item.isReady ? 'Ready' : 'Not Ready'}
+                                    </span>
+                                    <span className={item.isServed ? 'text-red-600 font-semibold' : 'text-gray-500'}>
+                                      {item.isServed ? 'Served' : 'Not Served'}
+                                    </span>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                            <div className="flex flex-wrap justify-end gap-2 mt-4">
+                              <button
+                                onClick={() => handleReopenOrder(order.id, order.orderNumber)}
+                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200 shadow-md text-sm active:scale-98 transform"
+                              >
+                                Reopen
+                              </button>
+                              <button
+                                onClick={() => handleEditOrder(order)}
+                                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-200 shadow-md text-sm active:scale-98 transform"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteOrder(order.id, order.orderNumber)}
+                                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-200 shadow-md text-sm active:scale-98 transform"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {/* Setup Section */}
+                {activeSection === 'setup' && (
+                  <section className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-red-500">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">App Setup</h2>
+
+                    {/* Add/Remove Menu Items */}
+                    <div className="mb-8 p-4 bg-red-50 rounded-lg shadow-sm">
+                      <h3 className="text-xl font-bold text-gray-800 mb-3">Manage Menu Items</h3>
+                      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                        <input
+                          type="text"
+                          placeholder="Item Name"
+                          value={newMenuItemName}
+                          onChange={(e) => setNewMenuItemName(e.target.value)}
+                          className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Price"
+                          value={newMenuItemPrice}
+                          onChange={(e) => setNewMenuItemPrice(e.target.value)}
+                          className="w-full sm:w-auto p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                        />
+                        <button
+                          onClick={handleAddMenuItem}
+                          className="w-full sm:w-auto px-4 py-3 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition duration-200 active:scale-98 transform"
+                        >
+                          Add Item
+                        </button>
+                      </div>
+                      <ul className="space-y-2">
+                        {menuItems.length === 0 ? (
+                          <p className="text-gray-500 text-center">No menu items defined.</p>
+                        ) : (
+                          menuItems.map(item => (
+                            <li key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                              <span className="font-medium">{item.name} - £{item.price.toFixed(2)}</span>
+                              <button
+                                onClick={() => handleDeleteMenuItem(item.id, item.name)}
+                                className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm hover:bg-red-200 transition duration-200 active:scale-95 transform"
+                              >
+                                Delete
+                              </button>
+                            </li>
+                          ))
+                        )}
+                      </ul>
+                    </div>
+
+                    {/* Export Orders */}
+                    <div className="mb-8 p-4 bg-red-50 rounded-lg shadow-sm">
+                      <h3 className="text-xl font-bold text-gray-800 mb-3">Data Management</h3>
+                      <button
+                        onClick={handleExportOrders}
+                        className="w-full px-4 py-3 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition duration-200 active:scale-98 transform"
+                      >
+                        Export All Orders to CSV
+                      </button>
+                    </div>
+
+                    {/* Reset Order Count */}
+                    <div className="p-4 bg-red-50 rounded-lg shadow-sm">
+                      <h3 className="text-xl font-bold text-gray-800 mb-3">Order Counter</h3>
+                      <button
+                        onClick={handleResetOrderCount}
+                        className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg shadow-md hover:bg-gray-700 transition duration-200 active:scale-98 transform"
+                      >
+                        Reset Order Count to 1
+                      </button>
+                    </div>
+                  </section>
+                )}
+              </main>
+
+              {/* Footer (optional, but good for mobile) */}
+              <footer className="bg-red-600 text-white p-3 text-center text-sm sticky bottom-0 z-10">
+                <p>&copy; 2025 BBQ Orders App. User ID: {userId || 'Loading...'}</p>
+              </footer>
             </div>
+          );
+        }
 
-            {/* Export Orders */}
-            <div className="mb-8 p-4 bg-red-50 rounded-lg shadow-sm">
-              <h3 className="text-xl font-bold text-gray-800 mb-3">Data Management</h3>
-              <button
-                onClick={handleExportOrders}
-                className="w-full px-4 py-3 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition duration-200 active:scale-98 transform"
-              >
-                Export All Orders to CSV
-              </button>
-            </div>
-
-            {/* Reset Order Count */}
-            <div className="p-4 bg-red-50 rounded-lg shadow-sm">
-              <h3 className="text-xl font-bold text-gray-800 mb-3">Order Counter</h3>
-              <button
-                onClick={handleResetOrderCount}
-                className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg shadow-md hover:bg-gray-700 transition duration-200 active:scale-98 transform"
-              >
-                Reset Order Count to 1
-              </button>
-            </div>
-          </section>
-        )}
-      </main>
-
-      {/* Footer (optional, but good for mobile) */}
-      <footer className="bg-red-600 text-white p-3 text-center text-sm sticky bottom-0 z-10">
-        <p>&copy; 2025 BBQ Orders App. User ID: {userId || 'Loading...'}</p>
-      </footer>
-
-      {/* Tailwind CSS Script (for live preview in Canvas) */}
-      <script src="https://cdn.tailwindcss.com"></script>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            tailwind.config = {
-              theme: {
-                extend: {
-                  fontFamily: {
-                    inter: ['Inter', 'sans-serif'],
-                  },
-                  keyframes: {
-                    pingOnce: {
-                      '0%, 100%': { opacity: '0' },
-                      '50%': { opacity: '1' },
-                    }
-                  },
-                  animation: {
-                    'ping-once': 'pingOnce 1s cubic-bezier(0, 0, 0.2, 1) forwards',
-                  }
-                },
+        // Render the App component using ReactDOM
+        // This will be called after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const rootElement = document.getElementById('root');
+            if (rootElement) {
+                const root = ReactDOM.createRoot(rootElement);
+                root.render(React.createElement(App));
+            } else {
+                console.error("Root element with ID 'root' not found.");
+            }
+        });
+    </script>
+    <!-- Tailwind CSS Script (for live preview in Canvas) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+          theme: {
+            extend: {
+              fontFamily: {
+                inter: ['Inter', 'sans-serif'],
               },
-            };
-          `,
-        }}
-      />
-    </div>
-  );
-}
-
-// Export the App component and immediately render it
-// This ensures that App is defined before ReactDOM.createRoot is called
-window.App = App;
-
-// This script will run AFTER App is defined and Babel has processed it
-// It's placed here to ensure App is available when rendering
-document.addEventListener('DOMContentLoaded', () => {
-    const rootElement = document.getElementById('root');
-    if (rootElement) {
-        const root = ReactDOM.createRoot(rootElement);
-        root.render(React.createElement(App));
-    } else {
-        console.error("Root element with ID 'root' not found.");
-    }
-});
+              keyframes: {
+                pingOnce: {
+                  '0%, 100%': { opacity: '0' },
+                  '50%': { opacity: '1' },
+                }
+              },
+              animation: {
+                'ping-once': 'pingOnce 1s cubic-bezier(0, 0, 0.2, 1) forwards',
+              }
+            },
+          },
+        };
+    </script>
+</body>
+</html>
