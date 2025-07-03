@@ -11,10 +11,8 @@ esbuild.build({
   jsxFactory: 'React.createElement', // Required for React JSX
   jsxFragment: 'React.Fragment',
   loader: { '.js': 'jsx' }, // Added this line previously
-  // Crucial: Tell esbuild that 'react' and 'react-dom' are external and
-  // should be referenced as global variables 'React' and 'ReactDOM' respectively.
-  external: ['react', 'react-dom'],
-  globalName: 'AppBundle', // A unique global name for your bundled app if needed, though not strictly required for this fix
+  // Removed 'external: ['react', 'react-dom']' because app.js no longer imports them.
+  // They are now expected to be global.
 }).catch(() => process.exit(1));
 
 console.log('Build complete: bundle.js created.');
