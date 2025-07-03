@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BBQ Orders App</title>
-    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)" rel="stylesheet">
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
     </style>
@@ -12,8 +13,27 @@
 <body>
     <div id="root"></div>
 
-    <!-- Global variables for Firebase config -->
+    <!-- Load React and ReactDOM from unpkg.com (UMD versions for global access) -->
+    <!-- These MUST load and execute before your bundle.js -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Explicitly make React and ReactDOM global for older Firebase compat SDKs if needed,
+         and for clarity, though UMD bundles usually do this. -->
     <script>
+        window.React = React;
+        window.ReactDOM = ReactDOM;
+    </script>
+
+    <!-- Load Firebase SDKs from CDN (compat versions for global access) -->
+    <!-- These MUST load and execute before your bundle.js if your app uses them directly -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Global variables for Firebase config
+        // These MUST be defined before bundle.js runs as App.js expects them
         window.__app_id = "bbqorders-763b2"; // projectId from firebaseConfig
         window.__firebase_config = JSON.stringify({
             apiKey: "AIzaSyAyxUhAi7wlxjNV_UqPf4zGCKe3VGCeT-M",
@@ -28,10 +48,12 @@
 
     <!-- Your compiled JavaScript bundle -->
     <!-- This script loads the output of your build.js (bundle.js) -->
+    <!-- It must be placed AFTER all its dependencies (React, ReactDOM, Firebase) -->
     <script src="./bundle.js"></script>
 
     <!-- Tailwind CSS Script -->
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <!-- This should be loaded after your app script if it modifies elements rendered by React -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
           theme: {
