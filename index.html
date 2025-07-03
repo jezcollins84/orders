@@ -13,24 +13,20 @@
     <div id="root"></div>
 
     <!-- Load React and ReactDOM from esm.sh -->
-    <script type="module">
-        import React from 'https://esm.sh/react@18.2.0';
-        import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
-        // Make React and ReactDOM globally available for Babel to use
-        window.React = React;
-        window.ReactDOM = ReactDOM;
-    </script>
+    <script src="https://esm.sh/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://esm.sh/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+
+    <!-- Load Firebase SDKs from CDN -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
 
     <!-- Load Babel for JSX transpilation -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Your App.js file, now transpiled by Babel -->
-    <script type="text/babel" data-type="module" src="./App.js"></script>
-
     <script>
         // Global variables for Firebase config (replace with your actual config)
         // You MUST replace YOUR_API_KEY, YOUR_AUTH_DOMAIN, etc. with values from your Firebase project.
-        // Or, if using Netlify environment variables, you can inject them here.
         window.__app_id = "YOUR_FIREBASE_PROJECT_ID"; // projectId from firebaseConfig
         window.__firebase_config = JSON.stringify({
             apiKey: "AIzaSyAyxUhAi7wlxjNV_UqPf4zGCKe3VGCeT-M",
@@ -43,8 +39,19 @@
         window.__initial_auth_token = null; // Or a custom token if you implement one
 
         // Initialize and render the React app after Babel has processed App.js
-        // This part will be handled by App.js directly now that it's transpiled
-        // We ensure React and ReactDOM are globally available for App.js
+        // Ensure React and ReactDOM are globally available for App.js
+        // The compat versions of Firebase SDKs make their functions globally available
+        // e.g., firebase.initializeApp, firebase.auth().getAuth, firebase.firestore().getFirestore
+    </script>
+
+    <!-- Your App.js file, now transpiled by Babel -->
+    <script type="text/babel" data-type="module" src="./App.js"></script>
+
+    <script>
+        // This script will run after App.js is loaded and transpiled by Babel
+        // We need to explicitly render the App component here
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
     </script>
 </body>
 </html>
