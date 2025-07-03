@@ -5,10 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BBQ Orders App</title>
     <!-- Google Fonts - Inter -->
+    <!-- Using fonts.googleapis.com directly for robustness -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
     </style>
+
+    <!-- Tailwind CSS Script -->
+    <!-- Placed in head for early styling, but still from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Ensure tailwind.config is defined immediately after tailwind script
+        tailwind.config = {
+          theme: {
+            extend: {
+              fontFamily: {
+                inter: ['Inter', 'sans-serif'],
+              },
+              keyframes: {
+                pingOnce: {
+                  '0%, 100%': { opacity: '0' },
+                  '50%': { opacity: '1' },
+                }
+              },
+              animation: {
+                'ping-once': 'pingOnce 1s cubic-bezier(0, 0, 0.2, 1) forwards',
+              }
+            },
+          },
+        };
+    </script>
 </head>
 <body>
     <div id="root"></div>
@@ -18,15 +44,8 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
-    <!-- Explicitly make React and ReactDOM global for older Firebase compat SDKs if needed,
-         and for clarity, though UMD bundles usually do this. -->
-    <script>
-        window.React = React;
-        window.ReactDOM = ReactDOM;
-    </script>
-
     <!-- Load Firebase SDKs from CDN (compat versions for global access) -->
-    <!-- These MUST load and execute before your bundle.js if your app uses them directly -->
+    <!-- These MUST load and execute before your bundle.js -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
@@ -51,28 +70,23 @@
     <!-- It must be placed AFTER all its dependencies (React, ReactDOM, Firebase) -->
     <script src="./bundle.js"></script>
 
-    <!-- Tailwind CSS Script -->
-    <!-- This should be loaded after your app script if it modifies elements rendered by React -->
-    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-          theme: {
-            extend: {
-              fontFamily: {
-                inter: ['Inter', 'sans-serif'],
-              },
-              keyframes: {
-                pingOnce: {
-                  '0%, 100%': { opacity: '0' },
-                  '50%': { opacity: '1' },
-                }
-              },
-              animation: {
-                'ping-once': 'pingOnce 1s cubic-bezier(0, 0, 0.2, 1) forwards',
-              }
-            },
-          },
-        };
+        // Ensure the app renders only after the DOM is fully loaded and all scripts are available
+        document.addEventListener('DOMContentLoaded', function() {
+            const rootElement = document.getElementById('root');
+            if (rootElement && typeof ReactDOM !== 'undefined' && typeof React !== 'undefined' && typeof App !== 'undefined') {
+                const root = ReactDOM.createRoot(rootElement);
+                root.render(React.createElement(App));
+                console.log("App rendered successfully.");
+            } else {
+                console.error("Failed to render App. Debug info:", {
+                    rootElement: rootElement,
+                    ReactDOMDefined: typeof ReactDOM !== 'undefined',
+                    ReactDefined: typeof React !== 'undefined',
+                    AppDefined: typeof App !== 'undefined'
+                });
+            }
+        });
     </script>
 </body>
 </html>
