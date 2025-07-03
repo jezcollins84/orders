@@ -12,11 +12,11 @@
 <body>
     <div id="root"></div>
 
-    <!-- Load React and ReactDOM from esm.sh -->
-    <script src="https://esm.sh/react@18.2.0/umd/react.production.min.js"></script>
-    <script src="https://esm.sh/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <!-- Load React and ReactDOM from unpkg.com (UMD versions for global access) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
-    <!-- Load Firebase SDKs from CDN -->
+    <!-- Load Firebase SDKs from CDN (compat versions for global access) -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
@@ -37,19 +37,14 @@
             appId: "1:525014584357:web:475cc586634367b86b03cc"
         });
         window.__initial_auth_token = null; // Or a custom token if you implement one
-
-        // Initialize and render the React app after Babel has processed App.js
-        // Ensure React and ReactDOM are globally available for App.js
-        // The compat versions of Firebase SDKs make their functions globally available
-        // e.g., firebase.initializeApp, firebase.auth().getAuth, firebase.firestore().getFirestore
     </script>
 
     <!-- Your App.js file, now transpiled by Babel -->
-    <script type="text/babel" data-type="module" src="./App.js"></script>
+    <script type="text/babel" src="./App.js"></script>
 
     <script>
-        // This script will run after App.js is loaded and transpiled by Babel
-        // We need to explicitly render the App component here
+        // This script will run after App.js is loaded and transpiled by Babel,
+        // making the global 'App' component available.
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(React.createElement(App));
     </script>
