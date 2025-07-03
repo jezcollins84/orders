@@ -11,27 +11,40 @@
 </head>
 <body>
     <div id="root"></div>
+
+    <!-- Load React and ReactDOM from esm.sh -->
     <script type="module">
         import React from 'https://esm.sh/react@18.2.0';
         import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
-        import App from './App.js';
+        // Make React and ReactDOM globally available for Babel to use
+        window.React = React;
+        window.ReactDOM = ReactDOM;
+    </script>
 
+    <!-- Load Babel for JSX transpilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Your App.js file, now transpiled by Babel -->
+    <script type="text/babel" data-type="module" src="./App.js"></script>
+
+    <script>
         // Global variables for Firebase config (replace with your actual config)
         // You MUST replace YOUR_API_KEY, YOUR_AUTH_DOMAIN, etc. with values from your Firebase project.
         // Or, if using Netlify environment variables, you can inject them here.
-        window.__app_id = "bbqorders-763b2"; // projectId from firebaseConfig
+        window.__app_id = "YOUR_FIREBASE_PROJECT_ID"; // projectId from firebaseConfig
         window.__firebase_config = JSON.stringify({
             apiKey: "AIzaSyAyxUhAi7wlxjNV_UqPf4zGCKe3VGCeT-M",
             authDomain: "bbqorders-763b2.firebaseapp.com",
             projectId: "bbqorders-763b2",
             storageBucket: "bbqorders-763b2.firebasestorage.app",
-  	    messagingSenderId: "525014584357",
+  	        messagingSenderId: "525014584357",
             appId: "1:525014584357:web:475cc586634367b86b03cc"
         });
         window.__initial_auth_token = null; // Or a custom token if you implement one
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(App));
+        // Initialize and render the React app after Babel has processed App.js
+        // This part will be handled by App.js directly now that it's transpiled
+        // We ensure React and ReactDOM are globally available for App.js
     </script>
 </body>
 </html>
