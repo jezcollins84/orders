@@ -50,6 +50,14 @@
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
 
     <script>
+        // Explicitly ensure Firebase modules are globally accessible
+        // This is crucial for the bundled app to find them.
+        window.firebase = window.firebase || {};
+        window.firebase.initializeApp = firebase.initializeApp;
+        window.firebase.auth = firebase.auth;
+        window.firebase.firestore = firebase.firestore;
+        // Add other Firebase modules if you use them directly (e.g., firebase.storage, firebase.database)
+
         // Global variables for Firebase config
         // These MUST be defined before bundle.js runs as App.js expects them
         window.__app_id = "bbqorders-763b2"; // projectId from firebaseConfig
@@ -66,7 +74,7 @@
 
     <!-- Your compiled JavaScript bundle -->
     <!-- This script loads the output of your build.js (bundle.js) -->
-    <!-- It now contains the rendering logic itself -->
+    <!-- It must be placed AFTER all its dependencies (React, ReactDOM, Firebase) -->
     <script src="./bundle.js"></script>
 
     <!-- Removed the external rendering script from here -->
