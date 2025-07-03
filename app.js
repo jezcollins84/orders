@@ -730,11 +730,11 @@ function App() {
                   placeholder="Price"
                   value={newMenuItemPrice}
                   onChange={(e) => setNewMenuItemPrice(e.target.value)}
-                  className="w-full sm:w-auto p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" // Changed w-24 to w-full sm:w-auto
+                  className="w-full sm:w-auto p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
                 <button
                   onClick={handleAddMenuItem}
-                  className="w-full sm:w-auto px-4 py-3 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition duration-200 active:scale-98 transform" // Added w-full sm:w-auto
+                  className="w-full sm:w-auto px-4 py-3 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition duration-200 active:scale-98 transform"
                 >
                   Add Item
                 </button>
