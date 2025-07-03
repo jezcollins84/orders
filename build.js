@@ -10,7 +10,8 @@ esbuild.build({
   target: ['es2020'], // Ensure compatibility with modern browsers
   jsxFactory: 'React.createElement', // Required for React JSX
   jsxFragment: 'React.Fragment',
-  loader: { '.js': 'jsx' }, // <<< ADD THIS LINE
+  loader: { '.js': 'jsx' }, // Added this line previously
+  external: ['react', 'react-dom'], // <<< ADD THIS CRUCIAL LINE
 }).catch(() => process.exit(1));
 
 console.log('Build complete: bundle.js created.');
