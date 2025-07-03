@@ -62,39 +62,13 @@
             appId: "1:525014584357:web:475cc586634367b86b03cc"
         });
         window.__initial_auth_token = null;
-
-        // Explicitly ensure React and ReactDOM are globally available for the bundled app
-        // This is a redundant but defensive step to combat stubborn loading issues.
-        if (typeof React === 'undefined' && typeof window.React !== 'undefined') {
-            window.React = window.React;
-        }
-        if (typeof ReactDOM === 'undefined' && typeof window.ReactDOM !== 'undefined') {
-            window.ReactDOM = window.ReactDOM;
-        }
     </script>
 
     <!-- Your compiled JavaScript bundle -->
     <!-- This script loads the output of your build.js (bundle.js) -->
-    <!-- It must be placed AFTER all its dependencies (React, ReactDOM, Firebase) -->
+    <!-- It now contains the rendering logic itself -->
     <script src="./bundle.js"></script>
 
-    <script>
-        // Ensure the app renders only after the DOM is fully loaded and all scripts are available
-        document.addEventListener('DOMContentLoaded', function() {
-            const rootElement = document.getElementById('root');
-            if (rootElement && typeof ReactDOM !== 'undefined' && typeof React !== 'undefined' && typeof App !== 'undefined') {
-                const root = ReactDOM.createRoot(rootElement);
-                root.render(React.createElement(App));
-                console.log("App rendered successfully.");
-            } else {
-                console.error("Failed to render App. Debug info:", {
-                    rootElement: rootElement,
-                    ReactDOMDefined: typeof ReactDOM !== 'undefined',
-                    ReactDefined: typeof React !== 'undefined',
-                    AppDefined: typeof App !== 'undefined'
-                });
-            }
-        });
-    </script>
+    <!-- Removed the external rendering script from here -->
 </body>
 </html>
