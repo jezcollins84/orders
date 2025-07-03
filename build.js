@@ -2,7 +2,7 @@
 const esbuild = require('esbuild');
 
 esbuild.build({
-  entryPoints: ['App.js'],
+  entryPoints: ['app.js'],
   bundle: true,
   outfile: 'bundle.js',
   minify: true,
