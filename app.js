@@ -822,7 +822,18 @@ function App() {
   );
 }
 
-// Export the App component for use in index.html when Babel transpiles it
-// This is necessary because App.js is loaded with type="text/babel"
-// and index.html expects App to be a global variable for ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+// Export the App component and immediately render it
+// This ensures that App is defined before ReactDOM.createRoot is called
 window.App = App;
+
+// This script will run AFTER App is defined and Babel has processed it
+// It's placed here to ensure App is available when rendering
+document.addEventListener('DOMContentLoaded', () => {
+    const rootElement = document.getElementById('root');
+    if (rootElement) {
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(React.createElement(App));
+    } else {
+        console.error("Root element with ID 'root' not found.");
+    }
+});
