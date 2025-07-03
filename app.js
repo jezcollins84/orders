@@ -1,4 +1,4 @@
-// App.js - This file will be compiled by esbuild
+// app.js - This file will be compiled by esbuild
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
@@ -7,7 +7,7 @@ import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, setD
 // Ensure these global variables are available from index.html
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? initialAuthToken : null; // Corrected: use initialAuthToken variable directly
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? initialAuthToken : null;
 
 // Initialize Firebase outside the component to avoid re-initialization
 let app, db, auth;
@@ -791,14 +791,4 @@ function App() {
           );
         }
 
-        // Render the App component using ReactDOM
-        // This will be called after the DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            const rootElement = document.getElementById('root');
-            if (rootElement) {
-                const root = ReactDOM.createRoot(rootElement);
-                root.render(React.createElement(App));
-            } else {
-                console.error("Root element with ID 'root' not found.");
-            }
-        });
+export default App; // Export the App component for esbuild
