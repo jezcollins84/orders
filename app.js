@@ -791,4 +791,8 @@ function App() {
           );
         }
 
-export default App; // Export the App component for esbuild
+// This line is crucial for esbuild to make App available to the global scope
+// when the bundle.js is loaded by the browser.
+window.App = App;
+
+export default App; // Export the App component for esbuild (though window.App is used for direct browser access)
