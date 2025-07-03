@@ -25,7 +25,8 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script>
-        // Global variables for Firebase config
+        // Global variables for Firebase config (replace with your actual config)
+        // You MUST replace YOUR_API_KEY, YOUR_AUTH_DOMAIN, etc. with values from your Firebase project.
         window.__app_id = "bbqorders-763b2"; // projectId from firebaseConfig
         window.__firebase_config = JSON.stringify({
             apiKey: "AIzaSyAyxUhAi7wlxjNV_UqPf4zGCKe3VGCeT-M",
@@ -43,20 +44,19 @@
         // Ensure these global variables are available from the script above
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        // Corrected: Use initialAuthToken variable directly, not a string literal
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-
         // Initialize Firebase outside the component to avoid re-initialization
-        // These will be accessed globally from the Firebase compat SDKs loaded in index.html
         let app, db, auth;
 
+        console.log("App.js: App function definition reached."); // DEBUG LOG
+
         function App() {
-          // Use React.useState, React.useEffect, React.useRef since React is global
-          const [activeSection, setActiveSection] = React.useState('newOrder'); // 'newOrder', 'activeOrders', 'completedOrders', 'setup'
+          console.log("App.js: App component rendering..."); // DEBUG LOG
+          const [activeSection, setActiveSection] = React.useState('newOrder');
           const [menuItems, setMenuItems] = React.useState([]);
           const [currentOrder, setCurrentOrder] = React.useState([]);
-          const [orders, setOrders] = React.useState([]); // All orders from Firestore
+          const [orders, setOrders] = React.useState([]);
           const [orderCounter, setOrderCounter] = React.useState(1);
           const [newMenuItemName, setNewMenuItemName] = React.useState('');
           const [newMenuItemPrice, setNewMenuItemPrice] = React.useState('');
@@ -65,35 +65,33 @@
           const [showModal, setShowModal] = React.useState(false);
           const [modalContent, setModalContent] = React.useState({ title: '', message: '', onConfirm: null, showConfirm: false });
 
-          // Refs for audio and notification
           const audioRef = React.useRef(null);
           const notificationRef = React.useRef(null);
 
-          // Initialize Firebase and Auth
           React.useEffect(() => {
+            console.log("App.js: useEffect for Firebase init/auth triggered."); // DEBUG LOG
             try {
-              // Use global firebase functions
               app = firebase.initializeApp(firebaseConfig);
               db = firebase.firestore().getFirestore(app);
               auth = firebase.auth().getAuth(app);
+              console.log("App.js: Firebase initialized."); // DEBUG LOG
 
               const unsubscribe = firebase.auth().onAuthStateChanged(auth, async (user) => {
                 if (user) {
                   setUserId(user.uid);
                   setIsAuthReady(true);
-                  console.log('Firebase Auth Ready. User ID:', user.uid);
+                  console.log('App.js: Firebase Auth Ready. User ID:', user.uid); // DEBUG LOG
                 } else {
                   try {
                     if (initialAuthToken) {
                       await firebase.auth().signInWithCustomToken(auth, initialAuthToken);
-                      console.log('Signed in with custom token.');
+                      console.log('App.js: Signed in with custom token.'); // DEBUG LOG
                     } else {
                       await firebase.auth().signInAnonymously(auth);
-                      console.log('Signed in anonymously.');
+                      console.log('App.js: Signed in anonymously.'); // DEBUG LOG
                     }
                   } catch (error) {
-                    console.error('Error signing in:', error);
-                    // Fallback to a random ID if auth fails completely
+                    console.error('App.js: Error signing in:', error); // DEBUG LOG
                     setUserId(crypto.randomUUID());
                     setIsAuthReady(true);
                   }
@@ -102,37 +100,39 @@
 
               return () => unsubscribe();
             } catch (error) {
-              console.error('Firebase initialization error:', error);
-              // Fallback to a random ID if firebase init fails completely
+              console.error('App.js: Firebase initialization error:', error); // DEBUG LOG
               setUserId(crypto.randomUUID());
               setIsAuthReady(true);
             }
           }, []);
 
-          // Fetch Menu Items and Order Counter
           React.useEffect(() => {
-            if (!isAuthReady || !db) return;
+            if (!isAuthReady || !db) {
+                console.log("App.js: Skipping data fetch useEffect. isAuthReady:", isAuthReady, "db:", db); // DEBUG LOG
+                return;
+            }
+            console.log("App.js: Data fetch useEffect triggered."); // DEBUG LOG
 
-            // Use global firestore functions
             const menuItemsCollectionRef = firebase.firestore().collection(db, `artifacts/${appId}/public/data/menuItems`);
             const unsubscribeMenuItems = firebase.firestore().onSnapshot(menuItemsCollectionRef, (snapshot) => {
               const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              setMenuItems(items.sort((a, b) => a.name.localeCompare(b.name))); // Sort alphabetically
+              setMenuItems(items.sort((a, b) => a.name.localeCompare(b.name)));
+              console.log("App.js: Menu items fetched:", items); // DEBUG LOG
             }, (error) => {
-              console.error("Error fetching menu items:", error);
+              console.error("App.js: Error fetching menu items:", error); // DEBUG LOG
             });
 
-            // Fetch Order Counter
             const appSettingsDocRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
             const unsubscribeOrderCounter = firebase.firestore().onSnapshot(appSettingsDocRef, (docSnap) => {
               if (docSnap.exists()) {
                 setOrderCounter(docSnap.data().count || 1);
+                console.log("App.js: Order counter fetched:", docSnap.data().count); // DEBUG LOG
               } else {
-                // Initialize if not exists
                 firebase.firestore().setDoc(appSettingsDocRef, { count: 1 }, { merge: true });
+                console.log("App.js: Order counter initialized to 1."); // DEBUG LOG
               }
             }, (error) => {
-              console.error("Error fetching order counter:", error);
+              console.error("App.js: Error fetching order counter:", error); // DEBUG LOG
             });
 
             return () => {
@@ -141,24 +141,24 @@
             };
           }, [isAuthReady, db]);
 
-          // Fetch Orders
           React.useEffect(() => {
             if (!isAuthReady || !db) return;
-
+            console.log("App.js: Orders fetch useEffect triggered."); // DEBUG LOG
             const ordersCollectionRef = firebase.firestore().collection(db, `artifacts/${appId}/public/data/orders`);
-            // Order by timestamp to get the latest orders first in active/completed sections
             const q = firebase.firestore().query(ordersCollectionRef, firebase.firestore().orderBy('timestamp', 'desc'));
 
             const unsubscribeOrders = firebase.firestore().onSnapshot(q, (snapshot) => {
               const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
               setOrders(fetchedOrders);
+              console.log("App.js: Orders fetched:", fetchedOrders); // DEBUG LOG
             }, (error) => {
-              console.error("Error fetching orders:", error);
+              console.error("App.js: Error fetching orders:", error); // DEBUG LOG
             });
 
             return () => unsubscribeOrders();
           }, [isAuthReady, db]);
 
+          // ... (rest of your App component code) ...
           const showConfirmationModal = (title, message, onConfirm) => {
             setModalContent({ title, message, onConfirm, showConfirm: true });
             setShowModal(true);
@@ -491,6 +491,7 @@
 
           const totalCurrentOrderCost = calculateCurrentOrderTotal();
 
+          console.log("App.js: Before return statement (JSX rendering)."); // DEBUG LOG
           return (
             <div className="min-h-screen bg-gray-100 flex flex-col font-inter text-gray-800">
               {/* Audio for ping notification */}
@@ -836,12 +837,14 @@
         // Render the App component using ReactDOM
         // This will be called after the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
+            console.log("index.html: DOMContentLoaded event fired. Attempting to render App."); // DEBUG LOG
             const rootElement = document.getElementById('root');
             if (rootElement) {
                 const root = ReactDOM.createRoot(rootElement);
                 root.render(React.createElement(App));
+                console.log("index.html: App rendered successfully."); // DEBUG LOG
             } else {
-                console.error("Root element with ID 'root' not found.");
+                console.error("index.html: Root element with ID 'root' not found."); // DEBUG LOG
             }
         });
     </script>
