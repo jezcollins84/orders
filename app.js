@@ -1,5 +1,6 @@
 // app.js - This file will be compiled by esbuild
-// NO import statements for React or Firebase here, as they are loaded globally in index.html
+// NO import statements for React, ReactDOM, or Firebase here.
+// They are loaded globally by CDN in index.html.
 
 // Ensure these global variables are available from index.html
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
