@@ -25,15 +25,14 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script>
-        // Global variables for Firebase config (replace with your actual config)
-        // You MUST replace YOUR_API_KEY, YOUR_AUTH_DOMAIN, etc. with values from your Firebase project.
-        window.__app_id = "YOUR_FIREBASE_PROJECT_ID"; // projectId from firebaseConfig
+        // Global variables for Firebase config
+        window.__app_id = "bbqorders-763b2"; // projectId from firebaseConfig
         window.__firebase_config = JSON.stringify({
             apiKey: "AIzaSyAyxUhAi7wlxjNV_UqPf4zGCKe3VGCeT-M",
             authDomain: "bbqorders-763b2.firebaseapp.com",
             projectId: "bbqorders-763b2",
             storageBucket: "bbqorders-763b2.firebasestorage.app",
-  	        messagingSenderId: "525014584357",
+            messagingSenderId: "525014584357",
             appId: "1:525014584357:web:475cc586634367b86b03cc"
         });
         window.__initial_auth_token = null; // Or a custom token if you implement one
@@ -41,16 +40,12 @@
 
     <!-- Your App component code, now embedded directly and transpiled by Babel -->
     <script type="text/babel">
-        // Remove all import statements for React and Firebase as they are now loaded globally
-        // import React, { useState, useEffect, useRef } from 'react';
-        // import { initializeApp } from 'firebase/app';
-        // import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-        // import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-
         // Ensure these global variables are available from the script above
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // Corrected: Use initialAuthToken variable directly, not a string literal
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
 
         // Initialize Firebase outside the component to avoid re-initialization
         // These will be accessed globally from the Firebase compat SDKs loaded in index.html
@@ -834,33 +829,6 @@
               <footer className="bg-red-600 text-white p-3 text-center text-sm sticky bottom-0 z-10">
                 <p>&copy; 2025 BBQ Orders App. User ID: {userId || 'Loading...'}</p>
               </footer>
-
-              {/* Tailwind CSS Script (for live preview in Canvas) */}
-              <script src="https://cdn.tailwindcss.com"></script>
-              <script
-                dangerouslySetInnerHTML={{
-                  __html: `
-                    tailwind.config = {
-                      theme: {
-                        extend: {
-                          fontFamily: {
-                            inter: ['Inter', 'sans-serif'],
-                          },
-                          keyframes: {
-                            pingOnce: {
-                              '0%, 100%': { opacity: '0' },
-                              '50%': { opacity: '1' },
-                            }
-                          },
-                          animation: {
-                            'ping-once': 'pingOnce 1s cubic-bezier(0, 0, 0.2, 1) forwards',
-                          }
-                        },
-                      },
-                    };
-                  `,
-                }}
-              />
             </div>
           );
         }
@@ -876,6 +844,28 @@
                 console.error("Root element with ID 'root' not found.");
             }
         });
+    </script>
+    <!-- Tailwind CSS Script (for live preview in Canvas) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+          theme: {
+            extend: {
+              fontFamily: {
+                inter: ['Inter', 'sans-serif'],
+              },
+              keyframes: {
+                pingOnce: {
+                  '0%, 100%': { opacity: '0' },
+                  '50%': { opacity: '1' },
+                }
+              },
+              animation: {
+                'ping-once': 'pingOnce 1s cubic-bezier(0, 0, 0.2, 1) forwards',
+              }
+            },
+          },
+        };
     </script>
 </body>
 </html>
