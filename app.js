@@ -1,4 +1,4 @@
-// App.js - This will be compiled by esbuild
+// App.js - This file will be compiled by esbuild
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
@@ -7,7 +7,7 @@ import { getFirestore, collection, query, orderBy, onSnapshot, doc, getDoc, setD
 // Ensure these global variables are available from index.html
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? initialAuthToken : null; // Corrected: use initialAuthToken variable directly
 
 // Initialize Firebase outside the component to avoid re-initialization
 let app, db, auth;
@@ -405,7 +405,7 @@ function App() {
         showInfoModal('Success', `Order #${orderNumber} deleted.`);
         closeModal();
       } catch (e) {
-        console.error("Error deleting order: ", e);
+        console.error("Error deleting document: ", e);
         showInfoModal('Error', 'Failed to delete menu item. Please try again.');
       }
     });
@@ -434,7 +434,6 @@ function App() {
       link.setAttribute('download', `bbq_orders_export_${new Date().toISOString().slice(0, 10)}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
-      link.click();
       document.body.removeChild(link);
       showInfoModal('Export Complete', 'All orders have been exported to a CSV file.');
     } else {
@@ -803,28 +802,3 @@ function App() {
                 console.error("Root element with ID 'root' not found.");
             }
         });
-    </script>
-    <!-- Tailwind CSS Script (for live preview in Canvas) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-          theme: {
-            extend: {
-              fontFamily: {
-                inter: ['Inter', 'sans-serif'],
-              },
-              keyframes: {
-                pingOnce: {
-                  '0%, 100%': { opacity: '0' },
-                  '50%': { opacity: '1' },
-                }
-              },
-              animation: {
-                'ping-once': 'pingOnce 1s cubic-bezier(0, 0, 0.2, 1) forwards',
-              }
-            },
-          },
-        };
-    </script>
-</body>
-</html>
