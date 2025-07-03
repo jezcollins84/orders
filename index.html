@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBQ Orders App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module">
+        import React from 'https://esm.sh/react@18.2.0';
+        import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
+        import App from './App.js';
+
+        // Global variables for Firebase config (replace with your actual config)
+        // You MUST replace YOUR_API_KEY, YOUR_AUTH_DOMAIN, etc. with values from your Firebase project.
+        // Or, if using Netlify environment variables, you can inject them here.
+        window.__app_id = "bbqorders-763b2"; // projectId from firebaseConfig
+        window.__firebase_config = JSON.stringify({
+            apiKey: ""AIzaSyAyxUhAi7wlxjNV_UqPf4zGCKe3VGCeT-M",
+            authDomain: "bbqorders-763b2.firebaseapp.com",
+            projectId: "bbqorders-763b2",
+            storageBucket: "bbqorders-763b2.firebasestorage.app",
+  	    messagingSenderId: "525014584357",
+            appId: "1:525014584357:web:475cc586634367b86b03cc"
+        });
+        window.__initial_auth_token = null; // Or a custom token if you implement one
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>
