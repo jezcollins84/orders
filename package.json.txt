@@ -1,0 +1,24 @@
+// package.json
+{
+  "name": "bbq-orders-app",
+  "version": "1.0.0",
+  "description": "A mobile web app for managing BBQ orders.",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build.js",
+    "start": "live-server ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "firebase": "^11.6.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.0",
+    "live-server": "^1.2.2"
+  }
+}
+```javascript
