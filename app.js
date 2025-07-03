@@ -290,7 +290,8 @@ function App() {
       await appSettingsDocRef.update({ count: orderCounter + 1 });
 
       setCurrentOrder([]); // Clear current order
-      setActiveSection('activeOrders'); // Navigate to active orders
+      // CHANGE 1: Re-route to 'newOrder' tab after placing an order
+      setActiveSection('newOrder'); // Navigate to new order section
 
       // Play ping sound and show notification
       if (audioRef.current) {
@@ -516,7 +517,8 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col font-inter text-gray-800">
       {/* Audio for ping notification */}
-      <audio ref={audioRef} src="https://www.soundjay.com/buttons/sounds/button-10.mp3" preload="auto"></audio>
+      {/* CHANGE 3: Updated audio source to a classic ping sound */}
+      <audio ref={audioRef} src="https://www.soundjay.com/misc/sounds/ping-1.mp3" preload="auto"></audio>
 
       {/* Global Notification Ping */}
       <div
@@ -665,52 +667,58 @@ function App() {
               <p className="text-gray-500 text-center">No active orders.</p>
             ) : (
               <div className="space-y-6">
-                {activeOrders.map(order => (
-                  <div key={order.id} className="bg-red-100 p-5 rounded-xl shadow-md border border-red-200">
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="text-xl font-bold text-red-800">Order #{order.orderNumber}</h3>
-                      <span className="text-lg font-semibold text-red-700">£{order.total.toFixed(2)}</span>
-                    </div>
-                    <p className="text-sm text-red-600 mb-4">Paid at: {order.displayTime}</p>
-                    <ul className="mb-4 space-y-2">
-                      {order.items.map((item, index) => (
-                                <li key={index} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
-                                  <span className="text-gray-800 font-medium">{item.name} x {item.quantity}</span>
-                                  <div className="flex space-x-2">
-                                    <button
-                                      onClick={() => toggleItemStatus(order.id, index, 'isReady')}
-                                      className={`px-3 py-1 rounded-full text-sm font-semibold transition duration-200 active:scale-95 transform
-                                        ${item.isReady ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                                    >
-                                      {item.isReady ? 'Ready!' : 'Ready?'}
-                                    </button>
-                                    <button
-                                      onClick={() => toggleItemStatus(order.id, index, 'isServed')}
-                                      className={`px-3 py-1 rounded-full text-sm font-semibold transition duration-200 active:scale-95 transform
-                                        ${item.isServed ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                                    >
-                                      {item.isServed ? 'Served!' : 'Served?'}
-                                    </button>
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                            <div className="flex justify-end space-x-2 mt-4">
-                              <button
-                                onClick={() => toggleAllItemsStatus(order.id, 'isReady')}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200 shadow-md active:scale-98 transform"
-                              >
-                                All Ready
-                              </button>
-                              <button
-                                onClick={() => toggleAllItemsStatus(order.id, 'isServed')}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200 shadow-md active:scale-98 transform"
-                              >
-                                Serve All
-                              </button>
+                {activeOrders.map(order => {
+                  // Determine if all items in the order are ready
+                  const allItemsReady = order.items.every(item => item.isReady);
+                  const orderBgClass = allItemsReady ? 'bg-green-100 border-green-200' : 'bg-red-100 border-red-200'; // CHANGE 2: Conditional background class
+
+                  return (
+                    <div key={order.id} className={`p-5 rounded-xl shadow-md border ${orderBgClass}`}> {/* Apply conditional class here */}
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-xl font-bold text-red-800">Order #{order.orderNumber}</h3>
+                        <span className="text-lg font-semibold text-red-700">£{order.total.toFixed(2)}</span>
+                      </div>
+                      <p className="text-sm text-red-600 mb-4">Paid at: {order.displayTime}</p>
+                      <ul className="mb-4 space-y-2">
+                        {order.items.map((item, index) => (
+                                  <li key={index} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                                    <span className="text-gray-800 font-medium">{item.name} x {item.quantity}</span>
+                                    <div className="flex space-x-2">
+                                      <button
+                                        onClick={() => toggleItemStatus(order.id, index, 'isReady')}
+                                        className={`px-3 py-1 rounded-full text-sm font-semibold transition duration-200 active:scale-95 transform
+                                          ${item.isReady ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                      >
+                                        {item.isReady ? 'Ready!' : 'Ready?'}
+                                      </button>
+                                      <button
+                                        onClick={() => toggleItemStatus(order.id, index, 'isServed')}
+                                        className={`px-3 py-1 rounded-full text-sm font-semibold transition duration-200 active:scale-95 transform
+                                          ${item.isServed ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                      >
+                                        {item.isServed ? 'Served!' : 'Served?'}
+                                      </button>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                              <div className="flex justify-end space-x-2 mt-4">
+                                <button
+                                  onClick={() => toggleAllItemsStatus(order.id, 'isReady')}
+                                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200 shadow-md active:scale-98 transform"
+                                >
+                                  All Ready
+                                </button>
+                                <button
+                                  onClick={() => toggleAllItemsStatus(order.id, 'isServed')}
+                                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200 shadow-md active:scale-98 transform"
+                                >
+                                  Serve All
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </section>
