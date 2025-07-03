@@ -2,7 +2,7 @@
 const esbuild = require('esbuild');
 
 esbuild.build({
-  entryPoints: ['app.js'],
+  entryPoints: ['app.js'], // Ensure this is 'app.js' (lowercase)
   bundle: true,
   outfile: 'bundle.js',
   minify: true,
@@ -10,6 +10,7 @@ esbuild.build({
   target: ['es2020'], // Ensure compatibility with modern browsers
   jsxFactory: 'React.createElement', // Required for React JSX
   jsxFragment: 'React.Fragment',
+  loader: { '.js': 'jsx' }, // <<< ADD THIS LINE
 }).catch(() => process.exit(1));
 
 console.log('Build complete: bundle.js created.');
