@@ -463,7 +463,7 @@ function App() {
 
       {/* Modal Component */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-auto border-t-4 border-red-500">
             <h3 className="text-xl font-bold text-gray-900 mb-4">{modalContent.title}</h3>
             <p className="text-gray-700 mb-6">{modalContent.message}</p>
@@ -796,4 +796,19 @@ function App() {
 // when the bundle.js is loaded by the browser.
 window.App = App;
 
-export default App; // Export the App component for esbuild (though window.App is used for direct browser access)
+// Render the App component using ReactDOM directly here
+document.addEventListener('DOMContentLoaded', function() {
+    const rootElement = document.getElementById('root');
+    if (rootElement && typeof ReactDOM !== 'undefined' && typeof React !== 'undefined') {
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(React.createElement(App));
+        console.log("App rendered successfully from app.js.");
+    } else {
+        console.error("Failed to render App from app.js. Debug info:", {
+            rootElement: rootElement,
+            ReactDOMDefined: typeof ReactDOM !== 'undefined',
+            ReactDefined: typeof React !== 'undefined',
+            // AppDefined: typeof App !== 'undefined' // No longer needed here as App is in scope
+        });
+    }
+});
