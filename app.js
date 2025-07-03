@@ -32,12 +32,12 @@ function App() {
   // Initialize Firebase and Auth
   React.useEffect(() => {
     try {
-      // Use global firebase functions (e.g., firebase.initializeApp)
-      app = firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore().getFirestore(app);
-      auth = firebase.auth().getAuth(app);
+      // Use explicitly global firebase functions (window.firebase)
+      app = window.firebase.initializeApp(firebaseConfig);
+      db = window.firebase.firestore().getFirestore(app);
+      auth = window.firebase.auth().getAuth(app);
 
-      const unsubscribe = firebase.auth().onAuthStateChanged(auth, async (user) => {
+      const unsubscribe = window.firebase.auth().onAuthStateChanged(auth, async (user) => {
         if (user) {
           setUserId(user.uid);
           setIsAuthReady(true);
@@ -45,10 +45,10 @@ function App() {
         } else {
           try {
             if (initialAuthToken) {
-              await firebase.auth().signInWithCustomToken(auth, initialAuthToken);
+              await window.firebase.auth().signInWithCustomToken(auth, initialAuthToken);
               console.log('Signed in with custom token.');
             } else {
-              await firebase.auth().signInAnonymously(auth);
+              await window.firebase.auth().signInAnonymously(auth);
               console.log('Signed in anonymously.');
             }
           } catch (error) {
@@ -73,9 +73,9 @@ function App() {
   React.useEffect(() => {
     if (!isAuthReady || !db) return;
 
-    // Use global firestore functions
-    const menuItemsCollectionRef = firebase.firestore().collection(db, `artifacts/${appId}/public/data/menuItems`);
-    const unsubscribeMenuItems = firebase.firestore().onSnapshot(menuItemsCollectionRef, (snapshot) => {
+    // Use explicitly global firestore functions
+    const menuItemsCollectionRef = window.firebase.firestore().collection(db, `artifacts/${appId}/public/data/menuItems`);
+    const unsubscribeMenuItems = window.firebase.firestore().onSnapshot(menuItemsCollectionRef, (snapshot) => {
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setMenuItems(items.sort((a, b) => a.name.localeCompare(b.name))); // Sort alphabetically
     }, (error) => {
@@ -83,13 +83,13 @@ function App() {
     });
 
     // Fetch Order Counter
-    const appSettingsDocRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
-    const unsubscribeOrderCounter = firebase.firestore().onSnapshot(appSettingsDocRef, (docSnap) => {
+    const appSettingsDocRef = window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
+    const unsubscribeOrderCounter = window.firebase.firestore().onSnapshot(appSettingsDocRef, (docSnap) => {
       if (docSnap.exists()) {
         setOrderCounter(docSnap.data().count || 1);
       } else {
         // Initialize if not exists
-        firebase.firestore().setDoc(appSettingsDocRef, { count: 1 }, { merge: true });
+        window.firebase.firestore().setDoc(appSettingsDocRef, { count: 1 }, { merge: true });
       }
     }, (error) => {
       console.error("Error fetching order counter:", error);
@@ -105,11 +105,11 @@ function App() {
   React.useEffect(() => {
     if (!isAuthReady || !db) return;
 
-    const ordersCollectionRef = firebase.firestore().collection(db, `artifacts/${appId}/public/data/orders`);
+    const ordersCollectionRef = window.firebase.firestore().collection(db, `artifacts/${appId}/public/data/orders`);
     // Order by timestamp to get the latest orders first in active/completed sections
-    const q = firebase.firestore().query(ordersCollectionRef, firebase.firestore().orderBy('timestamp', 'desc'));
+    const q = window.firebase.firestore().query(ordersCollectionRef, window.firebase.firestore().orderBy('timestamp', 'desc'));
 
-    const unsubscribeOrders = firebase.firestore().onSnapshot(q, (snapshot) => {
+    const unsubscribeOrders = window.firebase.firestore().onSnapshot(q, (snapshot) => {
       const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setOrders(fetchedOrders);
     }, (error) => {
@@ -147,7 +147,7 @@ function App() {
 
     try {
       const price = parseFloat(newMenuItemPrice);
-      await firebase.firestore().addDoc(firebase.firestore().collection(db, `artifacts/${appId}/public/data/menuItems`), {
+      await window.firebase.firestore().addDoc(window.firebase.firestore().collection(db, `artifacts/${appId}/public/data/menuItems`), {
         name: newMenuItemName,
         price: price,
       });
@@ -167,7 +167,7 @@ function App() {
     }
     showConfirmationModal('Confirm Delete', `Are you sure you want to delete "${name}" from the menu?`, async () => {
       try {
-        await firebase.firestore().deleteDoc(firebase.firestore().doc(db, `artifacts/${appId}/public/data/menuItems`, id));
+        await window.firebase.firestore().deleteDoc(window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/menuItems`, id));
         showInfoModal('Success', `${name} deleted from menu.`);
         closeModal();
       } catch (e) {
@@ -237,11 +237,11 @@ function App() {
         userId: userId, // Store the user who created the order
       };
 
-      await firebase.firestore().addDoc(firebase.firestore().collection(db, `artifacts/${appId}/public/data/orders`), newOrderDoc);
+      await window.firebase.firestore().addDoc(window.firebase.firestore().collection(db, `artifacts/${appId}/public/data/orders`), newOrderDoc);
 
       // Increment order counter in Firestore
-      const appSettingsDocRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
-      await firebase.firestore().updateDoc(appSettingsDocRef, { count: orderCounter + 1 });
+      const appSettingsDocRef = window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
+      await window.firebase.firestore().updateDoc(appSettingsDocRef, { count: orderCounter + 1 });
 
       setCurrentOrder([]); // Clear current order
       setActiveSection('activeOrders'); // Navigate to active orders
@@ -271,8 +271,8 @@ function App() {
     }
     showConfirmationModal('Confirm Reset', 'Are you sure you want to reset the order count to 1? This cannot be undone.', async () => {
       try {
-        const appSettingsDocRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
-        await firebase.firestore().setDoc(appSettingsDocRef, { count: 1 });
+        const appSettingsDocRef = window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
+        await window.firebase.firestore().setDoc(appSettingsDocRef, { count: 1 });
         showInfoModal('Success', 'Order count has been reset to 1.');
         closeModal();
       } catch (e) {
@@ -289,8 +289,8 @@ function App() {
       return;
     }
     try {
-      const orderRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId);
-      const orderSnap = await firebase.firestore().getDoc(orderRef);
+      const orderRef = window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId);
+      const orderSnap = await window.firebase.firestore().getDoc(orderRef);
 
       if (orderSnap.exists()) {
         const orderData = orderSnap.data();
@@ -306,12 +306,12 @@ function App() {
           updatedItems[itemIndex]['isServed'] = false;
         }
 
-        await firebase.firestore().updateDoc(orderRef, { items: updatedItems });
+        await window.firebase.firestore().updateDoc(orderRef, { items: updatedItems });
 
         // Check if all items are served in this order
         const allServed = updatedItems.every(item => item.isServed);
         if (allServed) {
-          await firebase.firestore().updateDoc(orderRef, { status: 'completed' });
+          await window.firebase.firestore().updateDoc(orderRef, { status: 'completed' });
           showInfoModal('Order Completed!', `Order #${orderData.orderNumber} has been moved to completed orders.`);
         }
       }
@@ -327,8 +327,8 @@ function App() {
       return;
     }
     try {
-      const orderRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId);
-      const orderSnap = await firebase.firestore().getDoc(orderRef);
+      const orderRef = window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId);
+      const orderSnap = await window.firebase.firestore().getDoc(orderRef);
 
       if (orderSnap.exists()) {
         const orderData = orderSnap.data();
@@ -338,11 +338,11 @@ function App() {
           // If marking all served, also mark all ready
           ...(statusType === 'isServed' && { isReady: true })
         }));
-        await firebase.firestore().updateDoc(orderRef, { items: updatedItems });
+        await window.firebase.firestore().updateDoc(orderRef, { items: updatedItems });
 
         // If all items are served, mark order as completed
         if (statusType === 'isServed') {
-          await firebase.firestore().updateDoc(orderRef, { status: 'completed' });
+          await window.firebase.firestore().updateDoc(orderRef, { status: 'completed' });
           showInfoModal('Order Completed!', `Order #${orderData.orderNumber} has been moved to completed orders.`);
         }
       }
@@ -373,8 +373,8 @@ function App() {
     }
     showConfirmationModal('Confirm Reopen', `Are you sure you want to reopen Order #${orderNumber}? It will move back to active orders.`, async () => {
       try {
-        const orderRef = firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId);
-        await firebase.firestore().updateDoc(orderRef, { status: 'active' });
+        const orderRef = window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId);
+        await window.firebase.firestore().updateDoc(orderRef, { status: 'active' });
         showInfoModal('Success', `Order #${orderNumber} reopened.`);
         closeModal();
       } catch (e) {
@@ -402,7 +402,7 @@ function App() {
     }
     showConfirmationModal('Confirm Delete', `Are you sure you want to permanently delete Order #${orderNumber}? This cannot be undone.`, async () => {
       try {
-        await firebase.firestore().deleteDoc(firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId));
+        await window.firebase.firestore().deleteDoc(window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId));
         showInfoModal('Success', `Order #${orderNumber} deleted.`);
         closeModal();
       } catch (e) {
@@ -463,7 +463,7 @@ function App() {
 
       {/* Modal Component */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-auto border-t-4 border-red-500">
             <h3 className="text-xl font-bold text-gray-900 mb-4">{modalContent.title}</h3>
             <p className="text-gray-700 mb-6">{modalContent.message}</p>
