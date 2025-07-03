@@ -7,12 +7,11 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? initialAuthToken : null;
 
-// Initialize Firebase outside the component to avoid re-initialization
-// These will be accessed globally from the Firebase compat SDKs loaded in index.html
-let app, db, auth;
+// Removed global `let app, db, auth;` declarations here.
+// They will now be managed as React state within the App component.
 
 function App() {
-  // Use React.useState, React.useEffect, React.useRef since React is global
+  console.log("App Component: Initializing state variables."); // DEBUG: Start of component render
   const [activeSection, setActiveSection] = React.useState('newOrder'); // 'newOrder', 'activeOrders', 'completedOrders', 'setup'
   const [menuItems, setMenuItems] = React.useState([]);
   const [currentOrder, setCurrentOrder] = React.useState([]);
@@ -25,35 +24,53 @@ function App() {
   const [showModal, setShowModal] = React.useState(false);
   const [modalContent, setModalContent] = React.useState({ title: '', message: '', onConfirm: null, showConfirm: false });
 
+  // Manage Firebase instances as state
+  const [firebaseApp, setFirebaseApp] = React.useState(null);
+  const [firestoreDb, setFirestoreDb] = React.useState(null);
+  const [firebaseAuth, setFirebaseAuth] = React.useState(null);
+
+
   // Refs for audio and notification
   const audioRef = React.useRef(null);
   const notificationRef = React.useRef(null);
 
   // Initialize Firebase and Auth
   React.useEffect(() => {
+    console.log("App Component: useEffect for Firebase init/auth triggered."); // DEBUG
+    // Only initialize once
+    if (firebaseApp) {
+        console.log("App Component: Firebase already initialized, skipping useEffect."); // DEBUG
+        return;
+    }
+    console.log("App Component: Attempting Firebase initialization..."); // DEBUG
     try {
-      // Use explicitly global firebase functions (window.firebase)
-      app = window.firebase.initializeApp(firebaseConfig);
-      db = window.firebase.firestore().getFirestore(app);
-      auth = window.firebase.auth().getAuth(app);
+      const appInstance = firebase.initializeApp(firebaseConfig);
+      const dbInstance = firebase.firestore().getFirestore(appInstance);
+      const authInstance = firebase.auth().getAuth(appInstance);
 
-      const unsubscribe = window.firebase.auth().onAuthStateChanged(auth, async (user) => {
+      setFirebaseApp(appInstance);
+      setFirestoreDb(dbInstance);
+      setFirebaseAuth(authInstance);
+
+      console.log('App Component: Firebase initialized and state set. dbInstance:', dbInstance); // DEBUG
+
+      const unsubscribe = firebase.auth().onAuthStateChanged(authInstance, async (user) => {
         if (user) {
           setUserId(user.uid);
           setIsAuthReady(true);
-          console.log('Firebase Auth Ready. User ID:', user.uid);
+          console.log('App Component: Firebase Auth State Changed. User ID:', user.uid); // DEBUG
         } else {
           try {
             if (initialAuthToken) {
-              await window.firebase.auth().signInWithCustomToken(auth, initialAuthToken);
-              console.log('Signed in with custom token.');
+              await firebase.auth().signInWithCustomToken(authInstance, initialAuthToken);
+              console.log('App Component: Signed in with custom token.'); // DEBUG
             } else {
-              await window.firebase.auth().signInAnonymously(auth);
-              console.log('Signed in anonymously.');
+              await firebase.auth().signInAnonymously(authInstance);
+              console.log('App Component: Signed in anonymously.'); // DEBUG
             }
+            setIsAuthReady(true); // Ensure auth ready is set even if no user initially
           } catch (error) {
-            console.error('Error signing in:', error);
-            // Fallback to a random ID if auth fails completely
+            console.error('App Component: Error during Firebase auth state change:', error); // DEBUG
             setUserId(crypto.randomUUID());
             setIsAuthReady(true);
           }
@@ -62,62 +79,74 @@ function App() {
 
       return () => unsubscribe();
     } catch (error) {
-      console.error('Firebase initialization error:', error);
-      // Fallback to a random ID if firebase init fails completely
+      console.error('App Component: FATAL Firebase initialization error:', error); // DEBUG
       setUserId(crypto.randomUUID());
       setIsAuthReady(true);
     }
-  }, []);
+  }, [firebaseApp]); // Dependency on firebaseApp to ensure it only runs once
 
   // Fetch Menu Items and Order Counter
   React.useEffect(() => {
-    if (!isAuthReady || !db) return;
+    console.log("App Component: useEffect for data fetch triggered. isAuthReady:", isAuthReady, "firestoreDb:", firestoreDb); // DEBUG
+    if (!isAuthReady || !firestoreDb) {
+        console.log("App Component: Skipping data fetch. Auth not ready or DB not initialized."); // DEBUG
+        return;
+    }
+    console.log("App Component: Attempting data fetch for menu items and order counter..."); // DEBUG
 
-    // Use explicitly global firestore functions
-    const menuItemsCollectionRef = window.firebase.firestore().collection(db, `artifacts/${appId}/public/data/menuItems`);
-    const unsubscribeMenuItems = window.firebase.firestore().onSnapshot(menuItemsCollectionRef, (snapshot) => {
+    const menuItemsCollectionRef = firebase.firestore().collection(firestoreDb, `artifacts/${appId}/public/data/menuItems`);
+    const unsubscribeMenuItems = firebase.firestore().onSnapshot(menuItemsCollectionRef, (snapshot) => {
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setMenuItems(items.sort((a, b) => a.name.localeCompare(b.name))); // Sort alphabetically
-    }, (error) => {
-      console.error("Error fetching menu items:", error);
-    });
-
-    // Fetch Order Counter
-    const appSettingsDocRef = window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
-    const unsubscribeOrderCounter = window.firebase.firestore().onSnapshot(appSettingsDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setOrderCounter(docSnap.data().count || 1);
-      } else {
-        // Initialize if not exists
-        window.firebase.firestore().setDoc(appSettingsDocRef, { count: 1 }, { merge: true });
+      console.log("App Component: Menu items fetched:", items); // DEBUG
+      if (items.length === 0) {
+          console.warn("App Component: No menu items found in Firestore. Please add them in Firebase console."); // DEBUG
       }
     }, (error) => {
-      console.error("Error fetching order counter:", error);
+      console.error("App Component: Error fetching menu items:", error); // DEBUG
+    });
+
+    const appSettingsDocRef = firebase.firestore().doc(firestoreDb, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
+    const unsubscribeOrderCounter = firebase.firestore().onSnapshot(appSettingsDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setOrderCounter(docSnap.data().count || 1);
+        console.log("App Component: Order counter fetched:", docSnap.data().count); // DEBUG
+      } else {
+        firebase.firestore().setDoc(appSettingsDocRef, { count: 1 }, { merge: true });
+        console.log("App Component: Order counter initialized to 1 (document not found)."); // DEBUG
+      }
+    }, (error) => {
+      console.error("App Component: Error fetching order counter:", error); // DEBUG
     });
 
     return () => {
+      console.log("App Component: Data fetch useEffect cleanup."); // DEBUG
       unsubscribeMenuItems();
       unsubscribeOrderCounter();
     };
-  }, [isAuthReady, db]);
+  }, [isAuthReady, firestoreDb]); // Depend on isAuthReady and firestoreDb
 
   // Fetch Orders
   React.useEffect(() => {
-    if (!isAuthReady || !db) return;
+    console.log("App Component: useEffect for all orders fetch triggered. isAuthReady:", isAuthReady, "firestoreDb:", firestoreDb); // DEBUG
+    if (!isAuthReady || !firestoreDb) return;
 
-    const ordersCollectionRef = window.firebase.firestore().collection(db, `artifacts/${appId}/public/data/orders`);
-    // Order by timestamp to get the latest orders first in active/completed sections
-    const q = window.firebase.firestore().query(ordersCollectionRef, window.firebase.firestore().orderBy('timestamp', 'desc'));
+    const ordersCollectionRef = firebase.firestore().collection(firestoreDb, `artifacts/${appId}/public/data/orders`);
+    const q = firebase.firestore().query(ordersCollectionRef, firebase.firestore().orderBy('timestamp', 'desc'));
 
-    const unsubscribeOrders = window.firebase.firestore().onSnapshot(q, (snapshot) => {
+    const unsubscribeOrders = firebase.firestore().onSnapshot(q, (snapshot) => {
       const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setOrders(fetchedOrders);
+      console.log("App Component: All orders fetched:", fetchedOrders); // DEBUG
     }, (error) => {
-      console.error("Error fetching orders:", error);
+      console.error("App Component: Error fetching all orders:", error); // DEBUG
     });
 
-    return () => unsubscribeOrders();
-  }, [isAuthReady, db]);
+    return () => {
+        console.log("App Component: All orders fetch useEffect cleanup."); // DEBUG
+        unsubscribeOrders();
+    };
+  }, [isAuthReady, firestoreDb]); // Depend on isAuthReady and firestoreDb
 
   const showConfirmationModal = (title, message, onConfirm) => {
     setModalContent({ title, message, onConfirm, showConfirm: true });
@@ -136,42 +165,48 @@ function App() {
 
   // --- Menu Item Management ---
   const handleAddMenuItem = async () => {
+    console.log("App Component: handleAddMenuItem called. firestoreDb:", firestoreDb); // DEBUG
     if (!newMenuItemName || !newMenuItemPrice || isNaN(parseFloat(newMenuItemPrice))) {
       showInfoModal('Input Error', 'Please enter a valid name and price for the menu item.');
       return;
     }
-    if (!db) {
+    // Use firestoreDb state variable
+    if (!firestoreDb) {
       showInfoModal('Error', 'Database not initialized. Please try again.');
       return;
     }
 
     try {
       const price = parseFloat(newMenuItemPrice);
-      await window.firebase.firestore().addDoc(window.firebase.firestore().collection(db, `artifacts/${appId}/public/data/menuItems`), {
+      await firebase.firestore().addDoc(firebase.firestore().collection(firestoreDb, `artifacts/${appId}/public/data/menuItems`), {
         name: newMenuItemName,
         price: price,
       });
       setNewMenuItemName('');
       setNewMenuItemPrice('');
       showInfoModal('Success', `${newMenuItemName} added to menu.`);
+      console.log("App Component: Menu item added successfully."); // DEBUG
     } catch (e) {
-      console.error("Error adding document: ", e);
+      console.error("App Component: Error adding document:", e); // DEBUG
       showInfoModal('Error', 'Failed to add menu item. Please try again.');
     }
   };
 
   const handleDeleteMenuItem = async (id, name) => {
-    if (!db) {
+    console.log("App Component: handleDeleteMenuItem called. firestoreDb:", firestoreDb); // DEBUG
+    // Use firestoreDb state variable
+    if (!firestoreDb) {
       showInfoModal('Error', 'Database not initialized. Please try again.');
       return;
     }
     showConfirmationModal('Confirm Delete', `Are you sure you want to delete "${name}" from the menu?`, async () => {
       try {
-        await window.firebase.firestore().deleteDoc(window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/menuItems`, id));
+        await firebase.firestore().deleteDoc(firebase.firestore().doc(firestoreDb, `artifacts/${appId}/public/data/menuItems`, id));
         showInfoModal('Success', `${name} deleted from menu.`);
         closeModal();
+        console.log("App Component: Menu item deleted successfully."); // DEBUG
       } catch (e) {
-        console.error("Error deleting document: ", e);
+        console.error("App Component: Error deleting document:", e); // DEBUG
         showInfoModal('Error', 'Failed to delete menu item. Please try again.');
       }
     });
@@ -212,11 +247,12 @@ function App() {
   };
 
   const handlePaidOrder = async () => {
+    console.log("App Component: handlePaidOrder called. firestoreDb:", firestoreDb); // DEBUG
     if (currentOrder.length === 0) {
       showInfoModal('Empty Order', 'Please add items to the order before marking as paid.');
       return;
     }
-    if (!db) {
+    if (!db) { // This `db` reference should now be `firestoreDb`
       showInfoModal('Error', 'Database not initialized. Please try again.');
       return;
     }
@@ -237,11 +273,11 @@ function App() {
         userId: userId, // Store the user who created the order
       };
 
-      await window.firebase.firestore().addDoc(window.firebase.firestore().collection(db, `artifacts/${appId}/public/data/orders`), newOrderDoc);
+      await firebase.firestore().addDoc(firebase.firestore().collection(firestoreDb, `artifacts/${appId}/public/data/orders`), newOrderDoc);
 
       // Increment order counter in Firestore
-      const appSettingsDocRef = window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
-      await window.firebase.firestore().updateDoc(appSettingsDocRef, { count: orderCounter + 1 });
+      const appSettingsDocRef = firebase.firestore().doc(firestoreDb, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
+      await firebase.firestore().updateDoc(appSettingsDocRef, { count: orderCounter + 1 });
 
       setCurrentOrder([]); // Clear current order
       setActiveSection('activeOrders'); // Navigate to active orders
@@ -257,26 +293,29 @@ function App() {
         }, 1000); // Duration of the animation
       }
       showInfoModal('Order Placed!', `Order #${orderCounter} has been added to active orders.`);
+      console.log("App Component: Order placed successfully."); // DEBUG
 
     } catch (e) {
-      console.error("Error adding order: ", e);
+      console.error("App Component: Error adding order:", e); // DEBUG
       showInfoModal('Error', 'Failed to place order. Please try again.');
     }
   };
 
   const handleResetOrderCount = async () => {
-    if (!db) {
+    console.log("App Component: handleResetOrderCount called. firestoreDb:", firestoreDb); // DEBUG
+    if (!firestoreDb) {
       showInfoModal('Error', 'Database not initialized. Please try again.');
       return;
     }
     showConfirmationModal('Confirm Reset', 'Are you sure you want to reset the order count to 1? This cannot be undone.', async () => {
       try {
-        const appSettingsDocRef = window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
-        await window.firebase.firestore().setDoc(appSettingsDocRef, { count: 1 });
+        const appSettingsDocRef = firebase.firestore().doc(firestoreDb, `artifacts/${appId}/public/data/appSettings`, 'orderCounter');
+        await firebase.firestore().setDoc(appSettingsDocRef, { count: 1 });
         showInfoModal('Success', 'Order count has been reset to 1.');
         closeModal();
+        console.log("App Component: Order count reset successfully."); // DEBUG
       } catch (e) {
-        console.error("Error resetting order count: ", e);
+        console.error("App Component: Error resetting order count:", e); // DEBUG
         showInfoModal('Error', 'Failed to reset order count. Please try again.');
       }
     });
@@ -284,13 +323,14 @@ function App() {
 
   // --- Active Order Management ---
   const toggleItemStatus = async (orderId, itemIndex, statusType) => {
-    if (!db) {
+    console.log("App Component: toggleItemStatus called. firestoreDb:", firestoreDb); // DEBUG
+    if (!firestoreDb) {
       showInfoModal('Error', 'Database not initialized. Please try again.');
       return;
     }
     try {
-      const orderRef = window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId);
-      const orderSnap = await window.firebase.firestore().getDoc(orderRef);
+      const orderRef = firebase.firestore().doc(firestoreDb, `artifacts/${appId}/public/data/orders`, orderId);
+      const orderSnap = await firebase.firestore().getDoc(orderRef);
 
       if (orderSnap.exists()) {
         const orderData = orderSnap.data();
@@ -306,29 +346,31 @@ function App() {
           updatedItems[itemIndex]['isServed'] = false;
         }
 
-        await window.firebase.firestore().updateDoc(orderRef, { items: updatedItems });
+        await firebase.firestore().updateDoc(orderRef, { items: updatedItems });
 
         // Check if all items are served in this order
         const allServed = updatedItems.every(item => item.isServed);
         if (allServed) {
-          await window.firebase.firestore().updateDoc(orderRef, { status: 'completed' });
+          await firebase.firestore().updateDoc(orderRef, { status: 'completed' });
           showInfoModal('Order Completed!', `Order #${orderData.orderNumber} has been moved to completed orders.`);
+          console.log("App Component: Order marked completed due to all served."); // DEBUG
         }
       }
     } catch (e) {
-      console.error("Error updating item status: ", e);
+      console.error("App Component: Error updating item status:", e); // DEBUG
       showInfoModal('Error', 'Failed to update item status. Please try again.');
     }
   };
 
   const toggleAllItemsStatus = async (orderId, statusType) => {
-    if (!db) {
+    console.log("App Component: toggleAllItemsStatus called. firestoreDb:", firestoreDb); // DEBUG
+    if (!firestoreDb) {
       showInfoModal('Error', 'Database not initialized. Please try again.');
       return;
     }
     try {
-      const orderRef = window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId);
-      const orderSnap = await window.firebase.firestore().getDoc(orderRef);
+      const orderRef = firebase.firestore().doc(firestoreDb, `artifacts/${appId}/public/data/orders`, orderId);
+      const orderSnap = await firebase.firestore().getDoc(orderRef);
 
       if (orderSnap.exists()) {
         const orderData = orderSnap.data();
@@ -338,16 +380,17 @@ function App() {
           // If marking all served, also mark all ready
           ...(statusType === 'isServed' && { isReady: true })
         }));
-        await window.firebase.firestore().updateDoc(orderRef, { items: updatedItems });
+        await firebase.firestore().updateDoc(orderRef, { items: updatedItems });
 
         // If all items are served, mark order as completed
         if (statusType === 'isServed') {
-          await window.firebase.firestore().updateDoc(orderRef, { status: 'completed' });
+          await firebase.firestore().updateDoc(orderRef, { status: 'completed' });
           showInfoModal('Order Completed!', `Order #${orderData.orderNumber} has been moved to completed orders.`);
+          console.log("App Component: All items served, order marked completed."); // DEBUG
         }
       }
     } catch (e) {
-      console.error("Error updating all items status: ", e);
+      console.error("App Component: Error updating all items status:", e); // DEBUG
       showInfoModal('Error', 'Failed to update all items status. Please try again.');
     }
   };
@@ -367,53 +410,54 @@ function App() {
 
   // --- Completed Order Management ---
   const handleReopenOrder = async (orderId, orderNumber) => {
-    if (!db) {
+    console.log("App Component: handleReopenOrder called. firestoreDb:", firestoreDb); // DEBUG
+    if (!firestoreDb) {
       showInfoModal('Error', 'Database not initialized. Please try again.');
       return;
     }
     showConfirmationModal('Confirm Reopen', `Are you sure you want to reopen Order #${orderNumber}? It will move back to active orders.`, async () => {
       try {
-        const orderRef = window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId);
-        await window.firebase.firestore().updateDoc(orderRef, { status: 'active' });
+        const orderRef = firebase.firestore().doc(firestoreDb, `artifacts/${appId}/public/data/orders`, orderId);
+        await firebase.firestore().updateDoc(orderRef, { status: 'active' });
         showInfoModal('Success', `Order #${orderNumber} reopened.`);
         closeModal();
+        console.log("App Component: Order reopened successfully."); // DEBUG
       } catch (e) {
-        console.error("Error reopening order: ", e);
+        console.error("App Component: Error reopening order:", e); // DEBUG
         showInfoModal('Error', 'Failed to reopen order. Please try again.');
       }
     });
   };
 
   const handleEditOrder = (order) => {
+    console.log("App Component: handleEditOrder called."); // DEBUG
     // This is a simplified edit. For a full edit, you'd load the order into currentOrder
     // and allow modification, then save it back. For now, we'll just show an info modal.
     showInfoModal('Edit Order', `Editing Order #${order.orderNumber} is not fully implemented in this demo. You can manually edit it in Firebase Firestore.`);
-    // A more robust implementation would involve:
-    // 1. Setting currentOrder to a deep copy of order.items
-    // 2. Setting a state like `isEditingOrder` to true
-    // 3. Changing the 'Paid' button to 'Update Order'
-    // 4. On 'Update Order', use `setDoc(orderRef, newOrderData)` instead of `addDoc`.
   };
 
   const handleDeleteOrder = async (orderId, orderNumber) => {
-    if (!db) {
+    console.log("App Component: handleDeleteOrder called. firestoreDb:", firestoreDb); // DEBUG
+    if (!firestoreDb) {
       showInfoModal('Error', 'Database not initialized. Please try again.');
       return;
     }
     showConfirmationModal('Confirm Delete', `Are you sure you want to permanently delete Order #${orderNumber}? This cannot be undone.`, async () => {
       try {
-        await window.firebase.firestore().deleteDoc(window.firebase.firestore().doc(db, `artifacts/${appId}/public/data/orders`, orderId));
+        await firebase.firestore().deleteDoc(firebase.firestore().doc(firestoreDb, `artifacts/${appId}/public/data/orders`, orderId));
         showInfoModal('Success', `Order #${orderNumber} deleted.`);
         closeModal();
+        console.log("App Component: Order deleted successfully."); // DEBUG
       } catch (e) {
-        console.error("Error deleting document: ", e);
-        showInfoModal('Error', 'Failed to delete menu item. Please try again.');
+        console.error("App Component: Error deleting order:", e); // DEBUG
+        showInfoModal('Error', 'Failed to delete order. Please try again.');
       }
     });
   };
 
   // --- Export Orders to CSV ---
   const handleExportOrders = () => {
+    console.log("App Component: handleExportOrders called."); // DEBUG
     if (orders.length === 0) {
       showInfoModal('No Orders', 'There are no orders to export.');
       return;
@@ -437,6 +481,7 @@ function App() {
       document.body.appendChild(link);
       document.body.removeChild(link);
       showInfoModal('Export Complete', 'All orders have been exported to a CSV file.');
+      console.log("App Component: Orders exported to CSV."); // DEBUG
     } else {
       // Fallback for browsers that don't support download attribute
       showInfoModal('Export Failed', 'Your browser does not support direct CSV download. Please copy the content manually.');
@@ -450,6 +495,7 @@ function App() {
 
   const totalCurrentOrderCost = calculateCurrentOrderTotal();
 
+  console.log("App Component: Rendering JSX for UI."); // DEBUG
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col font-inter text-gray-800">
       {/* Audio for ping notification */}
@@ -742,7 +788,7 @@ function App() {
                       </div>
                       <ul className="space-y-2">
                         {menuItems.length === 0 ? (
-                          <p className="text-gray-500 text-center">No menu items defined.</p>
+                          <p className="col-span-2 text-center text-gray-500">No menu items defined.</p>
                         ) : (
                           menuItems.map(item => (
                             <li key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
