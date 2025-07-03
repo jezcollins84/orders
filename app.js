@@ -139,7 +139,8 @@ function App() {
     // Get reference to orders collection using compat API
     const ordersCollectionRef = firestoreDb.collection(`artifacts/${appId}/public/data/orders`);
     // Create a query using compat API
-    const q = ordersCollectionRef.orderBy('timestamp', 'desc');
+    // CHANGE: Reorder active orders with oldest at the top (ascending timestamp)
+    const q = ordersCollectionRef.orderBy('timestamp', 'asc');
 
     const unsubscribeOrders = q.onSnapshot((snapshot) => {
       const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
