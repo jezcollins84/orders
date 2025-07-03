@@ -8,9 +8,8 @@ esbuild.build({
   minify: true,
   sourcemap: true,
   target: ['es2020'], // Ensure compatibility with modern browsers
-  jsxFactory: 'React.createElement', // Required for React JSX
-  jsxFragment: 'React.Fragment',
-  loader: { '.js': 'jsx' }, // Added this line previously
+  // Removed jsxFactory and jsxFragment as loader: { '.js': 'jsx' } handles it
+  loader: { '.js': 'jsx' },
   // Removed 'external: ['react', 'react-dom']' because app.js no longer imports them.
   // They are now expected to be global.
 }).catch(() => process.exit(1));
